@@ -1,0 +1,12 @@
+module(
+    name = "tenantlens",
+    version = "0.1.0",
+)
+
+# NOTE: version pins below are best-guess for a late-2026 toolchain.
+# If `bazel build //...` complains about resolution, bump them
+# (see https://registry.bazel.build) -- nothing else in the repo depends on the exact numbers.
+bazel_dep(name = "bazel_skylib", version = "1.7.1")
+bazel_dep(name = "apple_support", version = "1.22.1")
+bazel_dep(name = "rules_swift", version = "3.0.2")
+bazel_dep(name = "rules_apple", version = "4.0.1")

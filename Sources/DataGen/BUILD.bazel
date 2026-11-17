@@ -1,0 +1,9 @@
+load("@rules_swift//swift:swift_library.bzl", "swift_library")
+
+swift_library(
+    name = "DataGen",
+    srcs = glob(["*.swift"]),
+    module_name = "DataGen",
+    deps = ["//Sources/ETLCore"],
+    visibility = ["//visibility:public"],
+)

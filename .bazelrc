@@ -1,0 +1,5 @@
+common --enable_bzlmod
+build --macos_minimum_os=14.0
+build --apple_platform_type=macos
+test --test_output=errors
+test --test_summary=short
