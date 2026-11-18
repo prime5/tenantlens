@@ -18,7 +18,7 @@ A small multi-tenant BI stack in Swift: **ETL pipeline → tenant-scoped query l
 | Space (tenant isolation) | `query(tenant:…)` has no unscoped variant | `Warehouse.query` |
 | Measures & dimensions | `Measure` (count/sum/avg) + `groupBy` | `Warehouse.swift` |
 | Dashboards | SwiftUI + Swift Charts app (Phase 3), Xcode project via XcodeGen | `Apps/Dashboard` |
-| Mobile UI automation | XCUITest suite on the dashboard (Phase 4) | `Tests/DashboardUITests` |
+| Mobile UI automation | XCUITest suite on the dashboard (Phase 4) | `Apps/Dashboard/UITests` |
 
 ## Test strategy: three layers, one oracle
 
@@ -40,8 +40,7 @@ Tests/ETLCoreTests     XCTest: CSV, pipeline oracle/golden, schema drift
 Tests/WarehouseSQLiteTests XCTest: SQLite parity, injection guards, persistence, incremental loads
 Tests/DashboardCoreTests XCTest: dashboard numbers vs ground truth, accessibility contract
 Sources/DashboardCore  dashboard snapshot + run summary + AccessibilityID contract (UI-free, testable)
-Apps/Dashboard         SwiftUI app; project.yml (XcodeGen) -> TenantLensDashboard.xcodeproj
-Tests/DashboardUITests (Phase 4) XCUITest
+Apps/Dashboard         SwiftUI app + UITests/ (XCUITest); project.yml (XcodeGen) -> TenantLensDashboard.xcodeproj
 ```
 
 SwiftPM is the fast inner loop (`swift test`); Bazel is the build of record (`bazel test //...`). Both read the same sources.
@@ -74,6 +73,16 @@ SwiftPM is the fast inner loop (`swift test`); Bazel is the build of record (`ba
 - **Deterministic launch**: `-seed N` (default 42) and `-db path` (default `:memory:`) via the UserDefaults argument domain; XCUITest sets these.
 - **Logic stays out of the app target**: `DashboardCore` builds the snapshot with plain functions; the app's `@Observable` model only holds state.
 - **Known gap**: no schema migration. A database file created before `order_month` existed must be deleted.
+
+## Phase 4 decisions
+
+- **Black box**: the UI test runs in its own process and reads only the accessibility tree.
+- **Three oracle layers**: (a) the test process recomputes every series from the same seed using an in-memory warehouse (the app uses SQLite, so storage differs too); (b) per-tenant totals vs `GroundTruth`; (c) hand-derived goldens (621/576/45, 12 months, 192 orders). Layer (a) shares `DashboardCore` with the app; (b) and (c) cover that common mode.
+- **Row counts are asserted** (`identifier BEGINSWITH`), so an extra or missing row fails, not only a wrong value.
+- **Testing the test**: launching with `-seed 7` must not match seed-42 expectations.
+- **No fixed sleeps**: after a tenant switch, wait until the total shows that tenant's value, then read rows.
+- **Chart marks**: read bar values directly when exposed; otherwise `XCTSkip` with the reason.
+- **Evidence**: a window screenshot per tenant, kept only on failure.
 
 ## Honest notes
 

@@ -33,11 +33,36 @@ targets:
         CODE_SIGN_IDENTITY: "-"        # ad-hoc signing: runs locally, no developer team needed
         CODE_SIGN_STYLE: Manual
         ENABLE_HARDENED_RUNTIME: NO
+  TenantLensDashboardUITests:
+    type: bundle.ui-testing
+    platform: macOS
+    sources: [UITests]
+    dependencies:
+      - target: TenantLensDashboard
+      # The test process links the same libraries so it can recompute the expected dashboard itself.
+      - package: TenantLens
+        product: ETLCore
+      - package: TenantLens
+        product: DataGen
+      - package: TenantLens
+        product: DashboardCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.tenantlens.dashboard.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        SWIFT_VERSION: "5.0"
+        TEST_TARGET_NAME: TenantLensDashboard
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGN_STYLE: Manual
 schemes:
   TenantLensDashboard:
     build:
       targets:
         TenantLensDashboard: all
+        TenantLensDashboardUITests: [test]
     run:
       commandLineArguments:
         "-seed 42": true
+    test:
+      targets:
+        - TenantLensDashboardUITests
