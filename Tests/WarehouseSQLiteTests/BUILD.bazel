@@ -1,0 +1,12 @@
+load("@rules_swift//swift:swift_test.bzl", "swift_test")
+
+swift_test(
+    name = "WarehouseSQLiteTests",
+    size = "small",
+    srcs = glob(["*.swift"]),
+    deps = [
+        "//Sources/DataGen",
+        "//Sources/ETLCore",
+        "//Sources/WarehouseSQLite",
+    ],
+)

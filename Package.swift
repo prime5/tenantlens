@@ -13,9 +13,17 @@ let package = Package(
     targets: [
         .target(name: "ETLCore", path: "Sources/ETLCore", exclude: ["BUILD.bazel"]),
         .target(name: "DataGen", dependencies: ["ETLCore"], path: "Sources/DataGen", exclude: ["BUILD.bazel"]),
+        // macOS-only: imports the SDK's SQLite3 module (Linux would need a system-library target).
+        .target(
+            name: "WarehouseSQLite",
+            dependencies: ["ETLCore"],
+            path: "Sources/WarehouseSQLite",
+            exclude: ["BUILD.bazel"],
+            linkerSettings: [.linkedLibrary("sqlite3")]
+        ),
         .executableTarget(
             name: "TenantLensCLI",
-            dependencies: ["ETLCore", "DataGen"],
+            dependencies: ["ETLCore", "DataGen", "WarehouseSQLite"],
             path: "Sources/TenantLensCLI",
             exclude: ["BUILD.bazel"]
         ),
@@ -23,6 +31,12 @@ let package = Package(
             name: "ETLCoreTests",
             dependencies: ["ETLCore", "DataGen"],
             path: "Tests/ETLCoreTests",
+            exclude: ["BUILD.bazel"]
+        ),
+        .testTarget(
+            name: "WarehouseSQLiteTests",
+            dependencies: ["ETLCore", "DataGen", "WarehouseSQLite"],
+            path: "Tests/WarehouseSQLiteTests",
             exclude: ["BUILD.bazel"]
         ),
     ]

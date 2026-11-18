@@ -34,8 +34,10 @@ The generator injects known defects (duplicates, negative quantities, impossible
 MODULE.bazel  .bazelrc  .bazelversion  Package.swift
 Sources/ETLCore        pure Swift, Foundation only (Linux-buildable)
 Sources/DataGen        seeded generator + OrdersPipeline + ground truth
+Sources/WarehouseSQLite SQLite3 C API wrapper + SQLiteWarehouse (macOS-only)
 Sources/TenantLensCLI  run the pipeline, print report + rollups
-Tests/ETLCoreTests     XCTest
+Tests/ETLCoreTests     XCTest: CSV, pipeline oracle/golden, schema drift
+Tests/WarehouseSQLiteTests XCTest: SQLite parity, injection guards, persistence, incremental loads
 Apps/Dashboard         (Phase 3) SwiftUI app, rules_apple macos_application
 Tests/DashboardUITests (Phase 4) XCUITest
 ```
@@ -47,14 +49,22 @@ SwiftPM is the fast inner loop (`swift test`); Bazel is the build of record (`ba
 | # | Deliverable | Commit message |
 |---|---|---|
 | 0+1 | Monorepo skeleton + ETL core + generator + tests (this drop) | `feat: Bazel/SwiftPM skeleton, ETL core, synthetic multi-tenant data, oracle tests` |
-| 2 | SQLite `Sink`, watermark-based incremental loads, idempotent re-runs, schema-drift tests | `feat: sqlite sink and incremental loads` |
+| 2 | SQLite warehouse (parity-tested against in-memory), upsert-based incremental loads + `load_runs` history, schema contract + reject-rate guard | `feat: sqlite warehouse, incremental loads, schema contract` |
 | 3 | SwiftUI dashboard: tenant picker, revenue by region (bar), orders over time (line), run-report panel | `feat: SwiftUI dashboard with Swift Charts` |
 | 4 | XCUITest suite + accessibility identifiers; UI-vs-warehouse reconciliation | `test: XCUITest reconciliation suite` |
 | 5 | CI (GitHub Actions macOS runner + `bazel test //...`), flaky-test quarantine report | `ci: bazel test on macOS` |
 | 6 (stretch) | Natural-language → `Query` translator, evaluated with a golden set (reuse llm-eval-harness) | `feat: NL query with eval harness` |
 
+## Phase 2 decisions
+
+- **SQLite via the SDK's C library**, no third-party packages (keeps Bazel dependency-free). Wrapped in `SQLiteDB`.
+- **Money as REAL** (8-byte float). Tests compare with 1e-6 tolerance. Integer cents is the production-grade upgrade.
+- **Correctness of incremental loads comes from upsert on `(tenant_id, order_id)`**, so re-runs are no-ops and corrections become updates. `load_runs` records each load.
+- **Watermark deferred**: the generator's dates are not time-ordered, so a date high-water mark would flag most rows as "late". Revisit if a time-ordered source is added.
+- **Schema drift**: header contract checked before any row; missing required column or reject rate > 50% refuses the batch; extra columns are ignored and reported.
+- **Differential testing**: the in-memory warehouse is the reference; SQLite must return the same rows for every query shape (this pinned the SQL "aggregate over zero rows" difference via `HAVING COUNT(*) > 0`).
+
 ## Honest notes
 
-- **Not compiled yet.** This drop was written without a Swift toolchain (the cloud sandbox cannot install one). First action on your Mac is `swift test`; expect a few small compiler fixes. Paste any errors back and they get fixed in the next session.
-- **Bazel version pins** in `MODULE.bazel` are best guesses; bump if resolution fails.
+- Phase 0+1 verified on macOS with both `swift test` and `bazel test //...`. Phase 2 code was written without a local compile; first action is `swift test`.
 - SwiftUI/Charts/XCUITest only build on macOS; `ETLCore` and its tests are the portable part.

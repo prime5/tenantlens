@@ -50,6 +50,8 @@ public enum CSV {
 }
 
 public protocol Extractor {
+    /// Input column names, in source order. Used by the schema contract check.
+    func columns() throws -> [String]
     func extract() throws -> [Row]
 }
 
@@ -57,6 +59,11 @@ public protocol Extractor {
 public struct CSVExtractor: Extractor {
     public let text: String
     public init(text: String) { self.text = text }
+
+    /// Parses the text a second time; fine at this size, and keeps Extractor stateless.
+    public func columns() throws -> [String] {
+        CSV.parse(text).first ?? []
+    }
 
     public func extract() throws -> [Row] {
         let table = CSV.parse(text)

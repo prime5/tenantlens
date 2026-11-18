@@ -6,5 +6,6 @@ swift_binary(
     deps = [
         "//Sources/DataGen",
         "//Sources/ETLCore",
+        "//Sources/WarehouseSQLite",
     ],
 )
