@@ -117,7 +117,7 @@ public enum Generator {
     }
 }
 
-/// The orders ETL: contract check -> typecast -> validate -> dedupe -> derive revenue.
+/// The orders ETL: contract check -> typecast -> validate -> dedupe -> derive revenue, order_month.
 public enum OrdersPipeline {
     public static let schema = Schema([
         Column("order_id", .string),
@@ -130,7 +130,10 @@ public enum OrdersPipeline {
     ])
 
     /// What lands in the warehouse: the input schema plus derived columns.
-    public static let factSchema = Schema(OrdersPipeline.schema.columns + [Column("revenue", .double)])
+    public static let factSchema = Schema(OrdersPipeline.schema.columns + [
+        Column("revenue", .double),
+        Column("order_month", .string),
+    ])
     public static let primaryKey = ["tenant_id", "order_id"]
 
     public static func make(csv: String) -> Pipeline {
@@ -144,6 +147,11 @@ public enum OrdersPipeline {
                 Dedupe(keys: ["order_id"]),
                 Derive(column: "revenue") { row in
                     .double((row["quantity"]?.double ?? 0) * (row["unit_price"]?.double ?? 0))
+                },
+                // "2026-03": the monthly bucket is computed once here, so the dashboard's line chart
+                // is exactly one warehouse query (and Phase 4 reconciles against that query).
+                Derive(column: "order_month") { row in
+                    .string(row["order_date"]?.date.map { String(DateParsing.format($0).prefix(7)) } ?? "")
                 },
             ],
             contract: schema,

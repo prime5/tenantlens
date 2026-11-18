@@ -1,0 +1,43 @@
+# XcodeGen spec -- the source of truth for the Xcode project (the generated .xcodeproj is gitignored).
+#   brew install xcodegen
+#   cd Apps/Dashboard && xcodegen generate && open TenantLensDashboard.xcodeproj
+name: TenantLensDashboard
+options:
+  bundleIdPrefix: dev.tenantlens
+  deploymentTarget:
+    macOS: "14.0"
+packages:
+  TenantLens:
+    path: ../..          # the repo-root Package.swift
+targets:
+  TenantLensDashboard:
+    type: application
+    platform: macOS
+    sources: [Sources]
+    dependencies:
+      - package: TenantLens
+        product: ETLCore
+      - package: TenantLens
+        product: DataGen
+      - package: TenantLens
+        product: WarehouseSQLite
+      - package: TenantLens
+        product: DashboardCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.tenantlens.dashboard
+        GENERATE_INFOPLIST_FILE: YES
+        MARKETING_VERSION: "0.1"
+        CURRENT_PROJECT_VERSION: "1"
+        SWIFT_VERSION: "5.0"
+        CODE_SIGN_IDENTITY: "-"        # ad-hoc signing: runs locally, no developer team needed
+        CODE_SIGN_STYLE: Manual
+        ENABLE_HARDENED_RUNTIME: NO
+schemes:
+  TenantLensDashboard:
+    build:
+      targets:
+        TenantLensDashboard: all
+    run:
+      commandLineArguments:
+        "-seed 42": true

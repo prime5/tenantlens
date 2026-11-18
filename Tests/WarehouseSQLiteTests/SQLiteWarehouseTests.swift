@@ -28,7 +28,7 @@ final class SQLiteWarehouseTests: XCTestCase {
 
     func testSameAnswersAsInMemoryForEveryQueryShape() throws {
         let (memory, sqlite) = try loadedPair()
-        let shapes: [[String]] = [[], ["region"], ["product"], ["region", "product"], ["order_date"]]
+        let shapes: [[String]] = [[], ["region"], ["product"], ["region", "product"], ["order_date"], ["order_month"]]
         let measures: [Measure] = [.count, .sum("revenue"), .avg("quantity")]
         for tenant in ["T1", "T2", "T3", "T999"] {
             for groupBy in shapes {

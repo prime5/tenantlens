@@ -73,7 +73,7 @@ final class PipelineTests: XCTestCase {
     func testPipelineReportsStageCounts() throws {
         let r = try runPipeline()
         XCTAssertEqual(r.report.stages.map(\.name),
-                       ["typecast", "positive_quantity", "dedupe", "derive_revenue"])
+                       ["typecast", "positive_quantity", "dedupe", "derive_revenue", "derive_order_month"])
         XCTAssertEqual(r.report.stages.first?.rowsIn, r.truth.totalDataLines)
     }
 

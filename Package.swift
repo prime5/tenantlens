@@ -7,7 +7,11 @@ let package = Package(
     name: "TenantLens",
     platforms: [.macOS(.v14)],
     products: [
+        // Library products so the Xcode app (Apps/Dashboard) can depend on them as a local package.
         .library(name: "ETLCore", targets: ["ETLCore"]),
+        .library(name: "DataGen", targets: ["DataGen"]),
+        .library(name: "WarehouseSQLite", targets: ["WarehouseSQLite"]),
+        .library(name: "DashboardCore", targets: ["DashboardCore"]),
         .executable(name: "tenantlens", targets: ["TenantLensCLI"]),
     ],
     targets: [
@@ -21,6 +25,7 @@ let package = Package(
             exclude: ["BUILD.bazel"],
             linkerSettings: [.linkedLibrary("sqlite3")]
         ),
+        .target(name: "DashboardCore", dependencies: ["ETLCore"], path: "Sources/DashboardCore", exclude: ["BUILD.bazel"]),
         .executableTarget(
             name: "TenantLensCLI",
             dependencies: ["ETLCore", "DataGen", "WarehouseSQLite"],
@@ -37,6 +42,12 @@ let package = Package(
             name: "WarehouseSQLiteTests",
             dependencies: ["ETLCore", "DataGen", "WarehouseSQLite"],
             path: "Tests/WarehouseSQLiteTests",
+            exclude: ["BUILD.bazel"]
+        ),
+        .testTarget(
+            name: "DashboardCoreTests",
+            dependencies: ["DashboardCore", "DataGen", "ETLCore"],
+            path: "Tests/DashboardCoreTests",
             exclude: ["BUILD.bazel"]
         ),
     ]
